@@ -1,6 +1,8 @@
 {
   "name": "FlightSketch",
-  "integrations": {},
+  "integrations": {
+    "cordova": {}
+  },
   "type": "angular",
   "id": "c553669a"
 }
