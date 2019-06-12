@@ -1,0 +1,87 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button></ion-back-button>
+    </ion-buttons>
+    <ion-title>
+      Altimeter
+    </ion-title>
+    <ion-label *ngIf="connecting" slot="end">Connecting...</ion-label>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+
+    <ion-card class="device-card">    
+      <ion-card-header>
+        <ion-card-subtitle>Details</ion-card-subtitle>
+        <ion-card-title>{{device.name}}</ion-card-title>
+        
+      </ion-card-header>
+
+      <ion-card-content>
+
+            <ion-item lines="none">
+                <ion-icon name="bluetooth"  slot="start"></ion-icon>
+                  <ion-label>
+                    Signal
+                  </ion-label>
+                <ion-text slot="end">{{device.signal}} db.</ion-text>
+            </ion-item> 
+            <ion-item>
+              <ion-icon name="podium"  slot="start"></ion-icon>
+              <ion-label>
+                Max. Altitude
+              </ion-label>
+              <ion-text slot="end">{{device.maxAltitude | number}} ft.</ion-text>
+            </ion-item>  
+            <ion-item lines="none" *ngIf="!device.armed">
+                <ion-button slot="start" (click)="arm()" disabled="{{device.armed}}" color="primary" expand="block">Arm for Launch</ion-button>
+                <ion-button slot="end" color="primary" (click)="downloadData()">Download Datafile</ion-button>
+            </ion-item>
+            <ion-item>
+              <ion-button slot="start" (click)="startRecording()" color="primary" expand="block">Rwecord</ion-button>
+                
+            </ion-item>            
+            <ion-item>
+              <ion-icon name="podium"  slot="start"></ion-icon>
+              <ion-label>
+                Downloading...
+              </ion-label>
+              <ion-text slot="end">{{device.filePackets}}</ion-text>
+            </ion-item>  
+          <ion-list *ngIf="device.armed">
+              <ion-list-header>
+                  
+              <ion-label color="dark">DATA</ion-label>
+                
+              </ion-list-header>
+              <ion-item>
+                <ion-icon name="stats" slot="start"></ion-icon>
+                <ion-label>
+                  Current Altitude
+                </ion-label>
+                <ion-text slot="end">{{device.altitude | number}} ft.</ion-text>
+              </ion-item>
+                        
+              <ion-item>
+                <ion-icon name="thermometer"  slot="start"></ion-icon>
+                <ion-label>
+                  Temperature
+                </ion-label>
+                <ion-text slot="end">{{device.temp}} &#8457;</ion-text>
+              </ion-item>   
+              <ion-item>
+                  <ion-icon name="battery-full"  slot="start"></ion-icon>
+                  <ion-label>
+                    Power
+                  </ion-label>
+                  <ion-text slot="end">{{device.batteryVoltage}} V.</ion-text>
+                </ion-item>
+               
+            </ion-list>
+            
+      </ion-card-content>
+    </ion-card>
+
+</ion-content>

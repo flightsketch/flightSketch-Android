@@ -1,27 +1,39 @@
 <ion-header>
-  <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-menu-button></ion-menu-button>
-    </ion-buttons>
-    <ion-title>
-      Home
-    </ion-title>
-  </ion-toolbar>
-</ion-header>
+    <ion-toolbar>
+      <!--
+      <ion-buttons slot="start">
+        <ion-menu-button></ion-menu-button>
+      </ion-buttons>
+      -->
+      <ion-title>
+        FlightSketch
+      </ion-title>
+      <ion-label *ngIf="scanning" slot="end">Scanning...</ion-label>
+    </ion-toolbar>
+  </ion-header>
+  
+  <ion-content>
+    <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
+      <ion-refresher-content></ion-refresher-content>
+    </ion-refresher>
+  
+    <ion-list *ngFor="let device of devices">
+      <ion-card class="device-card">    
+        <ion-card-header>
+          <ion-card-subtitle>Altimeter Details</ion-card-subtitle>
+          <ion-card-title>{{device.name}}</ion-card-title>
+          
+        </ion-card-header>
 
-<ion-content>
-    <ion-card class="welcome-card">
-      <ion-img src="/assets/shapes.svg"></ion-img>
-      <ion-card-header>
-        <ion-card-subtitle>Get Started</ion-card-subtitle>
-        <ion-card-title>Welcome to Ionic</ion-card-title>
-      </ion-card-header>
-      <ion-card-content>
-        <p>Now that your app has been created, you'll want to start building out features and components. Check out some of the resources below for next steps.</p>
-      </ion-card-content>
-    </ion-card>
-    <ion-list>
-
-    </ion-list>    
-
-</ion-content>
+        <ion-card-content>
+          <ion-button color="primary" expand="block" (click)="openDevicePage(device)">Connect</ion-button>
+        </ion-card-content>
+      </ion-card>
+    </ion-list>
+    <ion-item *ngIf="!scanning && devices.length == 0">
+        <ion-label text-wrap>
+            No devices found, make sure the altimeter is turned on and in range. Pull to scan again.
+          </ion-label>
+    </ion-item>
+  </ion-content>
+  
