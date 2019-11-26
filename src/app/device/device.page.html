@@ -12,6 +12,8 @@
 
 <ion-content>
 
+
+
     <ion-card class="device-card">    
       <ion-card-header>
         <ion-card-title>{{device.name}}</ion-card-title>
@@ -41,7 +43,7 @@
               <ion-label>
                 Current Altitude
               </ion-label>
-              <ion-text slot="end">{{device.altitude | number}} dB</ion-text>
+              <ion-text slot="end">{{device.altitude | number}} ft</ion-text>
             </ion-item>
 
             <ion-item>
@@ -49,7 +51,7 @@
               <ion-label>
                 Max Altitude
               </ion-label>
-              <ion-text slot="end">{{device.maxAltitude | number}} dB</ion-text>
+              <ion-text slot="end">{{device.maxAltitude | number}} ft</ion-text>
             </ion-item>  
 
             <ion-item>
@@ -80,7 +82,19 @@
             </ion-list-header>   
           </ion-list>
 
+          </ion-card-content>
+        </ion-card>
+
           <div *ngIf="device.downloadComplete">
+             <div>
+                <ion-card>
+                  <ion-card-content>
+                    <canvas style="position: relative; margin: auto; height: 70vh;" #lineCanvas></canvas>
+                  </ion-card-content>
+                </ion-card>
+              </div>
+              <ion-card>
+                  <ion-card-content>
               <ion-item>
                   <ion-icon name="stats"  slot="start"></ion-icon>
                   <ion-label>
@@ -129,18 +143,33 @@
                   <ion-text slot="end">{{device.totalTime | number : '1.1-1'}} s</ion-text>
               </ion-item>
 
+              <ion-item>
+                <ion-label>File Name:</ion-label>
+                <ion-input (keyup.enter)="saveLocal()" [(ngModel)]=fileNameInput placeholder="File Name..."></ion-input>
+              </ion-item>
+
+              <ion-item>
+                <ion-label>Flight Title:</ion-label>
+                <ion-input (keyup.enter)="uploadData()" [(ngModel)]=titleInput placeholder="(Web only) Flight Log Title"></ion-input>
+              </ion-item>
+
+              <ion-item>
+                <ion-label>Description:</ion-label>
+                <ion-textarea (keyup.enter)="uploadData()" [(ngModel)]=descriptionInput placeholder="(Web only) File Description"></ion-textarea>
+              </ion-item>
+
+              <ion-button (click)="saveLocal()"  size="large" expand="block" color="primary" >Save to Local Storage</ion-button>
+              <ion-button (click)="uploadData()" size="large" expand="block" color="primary" >Upload to Account</ion-button>
               
-                <ion-button (click)="saveLocal()"  size="large" expand="block" color="primary" >Save to Local Storage</ion-button>
-                  
-                <ion-button (click)="uploadData()" size="large" expand="block" color="primary" >Upload to Account</ion-button>
-              
-              <ion-input placeholder="File Name..."></ion-input>
+              </ion-card-content>
+            </ion-card>
           </div>
 
-      </ion-card-content>
-    </ion-card>
+      
 
-    <div *ngIf="false">
+    
+
+    <div *ngIf="true" style="height:100%;">
 
         <ion-card class="device-card">    
           <ion-card-header>

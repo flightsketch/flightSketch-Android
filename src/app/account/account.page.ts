@@ -28,7 +28,7 @@ export class AccountPage implements OnInit {
             console.log(this.token);
 
             var url = "https://flightsketch.com/api/verify-token/";
-            var headers = { Authorization: "falseToken" };//this.token };
+            var headers = { Authorization: this.token };
             var params = {};
             this.http.get(url, params, headers).then((data) => {
                 console.log(JSON.parse(data.data).name);

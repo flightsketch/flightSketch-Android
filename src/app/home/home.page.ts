@@ -1,7 +1,7 @@
 import { Component, OnInit,ChangeDetectorRef } from '@angular/core';
 import { Router, NavigationExtras } from '@angular/router';
 import { BLE } from '@ionic-native/ble/ngx';
-import { AlertController } from '@ionic/angular';
+import { Platform, AlertController } from '@ionic/angular';
 
 
 @Component({
@@ -15,13 +15,20 @@ export class HomePage implements OnInit  {
   public scanning = false;
   public connectedDeviceSub = null;
 
-  constructor(private cdRef: ChangeDetectorRef, private alertController: AlertController, private ble: BLE, private router: Router) { 
+  constructor(private plt: Platform, private cdRef: ChangeDetectorRef, private alertController: AlertController, private ble: BLE, private router: Router) { 
     this.devices = [];
   }
 
   ngOnInit() {
-    this.doRefresh(false);
-  }  
+    //this.doRefresh(false);
+  }
+
+  ionViewDidEnter() {
+      console.log("call ionViewDidLoad");
+      this.plt.ready().then(() => {
+            this.doRefresh(false);
+        });
+  }
 
   openDevicePage(dev) {
 

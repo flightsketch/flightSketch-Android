@@ -18,6 +18,10 @@ import { AppRoutingModule } from './app-routing.module';
 import { DatePipe } from '@angular/common'
 import { IonicStorageModule } from '@ionic/storage';
 
+import 'hammerjs';
+import 'chartjs-plugin-zoom';
+
+
 @NgModule({
   declarations: [AppComponent],
   entryComponents: [],
@@ -27,7 +31,7 @@ import { IonicStorageModule } from '@ionic/storage';
       AppRoutingModule,
       IonicStorageModule.forRoot()
   ],
-  providers: [
+    providers: [
     StatusBar,
     BLE,
     File,

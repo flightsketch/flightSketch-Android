@@ -15,10 +15,14 @@ import {
   MarkerOptions,
   Marker
 } from "@ionic-native/google-maps";
-import { ViewChild } from "@angular/core";
 import { Platform, NavController } from "@ionic/angular";
 import { DatePipe } from '@angular/common'
 import { Storage } from '@ionic/storage';
+import { LoadingController } from '@ionic/angular';
+import { ViewChild, ElementRef } from "@angular/core";
+import { Chart } from "chart.js";
+import 'chartjs-plugin-zoom';
+import 'hammerjs';
 
 @Component({
   selector: 'app-device',
@@ -27,7 +31,8 @@ import { Storage } from '@ionic/storage';
 })
 export class DevicePage implements OnInit {
 
-  @ViewChild('map') element;
+    @ViewChild('map') element;
+    @ViewChild("lineCanvas") lineCanvas: ElementRef;
 
   public deviceSub:Subscription = null;
   public connecting:Boolean = false;
@@ -54,15 +59,29 @@ export class DevicePage implements OnInit {
     public token: String = "";
     public loggedIn: Boolean = false;
     public userName: String = "";
+    public uploadLoader: any;
+    public fileNameInput: String = "";
+    public titleInput: String = "";
+    public descriptionInput: String = "";
 
-  constructor(public googleMaps: GoogleMaps, public plt: Platform,
-              public nav: NavController,private geolocation: Geolocation,
-              private transfer: FileTransfer, private http: HTTP,
-              private file: File, private route: ActivatedRoute,
-              private cdRef: ChangeDetectorRef, private alertController: AlertController,
-              private ble: BLE, private router: Router,
-              public datepipe: DatePipe,
-              private storage: Storage) {
+    public avgWind: number = 0.0;
+    public windDir: number = 0.0;
+    public windGust: number = 0.0;
+    public temp: number = 0.0;
+    public humidity: number = 0.0;
+    public cloudCover: number = 0.0;
+
+    private lineChart: Chart;
+
+    constructor(private loadingController: LoadingController,
+                public googleMaps: GoogleMaps, public plt: Platform,
+                public nav: NavController,private geolocation: Geolocation,
+                private transfer: FileTransfer, private http: HTTP,
+                private file: File, private route: ActivatedRoute,
+                private cdRef: ChangeDetectorRef, private alertController: AlertController,
+                private ble: BLE, private router: Router,
+                public datepipe: DatePipe,
+                private storage: Storage) {
     this.device = this.router.getCurrentNavigation().extras.state.device;
     console.log('device page construction');
     console.log(this.device);
@@ -95,6 +114,9 @@ export class DevicePage implements OnInit {
     interval(1000).subscribe(()=>{
         this.updateLocal();
     });
+
+      Chart.defaults.global.maintainAspectRatio = false;
+      
   }
 
   ngOnInit() {
@@ -284,7 +306,8 @@ export class DevicePage implements OnInit {
   }
 
   arm() {
-
+      this.device["downloading"] = false;
+      this.device["downloadComplete"] = false;
     let data = new Uint8Array(4);
     data[0] = 0xF5;
     data[1] = 0xF1;
@@ -566,7 +589,7 @@ export class DevicePage implements OnInit {
     this.ble.disconnect(this.device.id);
   }
 
-  processDataFileAndSave() {
+    processDataFileAndSave() {
 
       this.downloadComplete = true;
       this.lines = new Array<String>();
@@ -623,7 +646,14 @@ export class DevicePage implements OnInit {
       let timeToBurnout: number = 0;
       let timeToApogee: number = 0;
       let totalTime: number = 0;
-      let timeOffset: number = 0;
+        let timeOffset: number = 0;
+
+        let date = new Date();
+        let fileName: string = "";
+        let latest_date = this.datepipe.transform(date, 'yyyy-MM-dd__HH-mm-ss');
+        console.log(latest_date);
+        fileName = "fltSk_" + latest_date;
+        this.fileNameInput = fileName;
 
 
 
@@ -765,13 +795,141 @@ export class DevicePage implements OnInit {
           this.lines.push(line);
       }
 
-      this.cdRef.detectChanges();
+        this.cdRef.detectChanges();
+
+        let altitudePlot: Array<{ x: number, y: number }> = new Array<{ x: number, y: number }>();
+        let velocityPlot: Array<{ x: number, y: number }> = new Array<{ x: number, y: number }>();
+
+        for (let i = 0; i < numLines; i++) {
+
+            altitudePlot[i] = {
+                x: time[i] - timeOffset,
+                y: altitude[i]
+            };
+
+            velocityPlot[i] = {
+                x: time[i] - timeOffset,
+                y: velocity[i]
+            };
+
+        }
+
+        this.lineChart = new Chart(this.lineCanvas.nativeElement, {
+            type: "scatter",
+            label: "Flight Data",
+            data: {
+                datasets: [
+                    {
+                        showLine: true,
+                        label: 'Altitude',
+                        yAxisID: 'Alt',
+                        fill: false,
+                        pointRadius: 0,
+                        backgroundColor: 'rgba(0, 0, 255, 1)',
+                        borderColor: 'rgba(0, 0, 255, 1)',
+                        data: altitudePlot,
+                        
+                    },
+                    {
+                        showLine: true,
+                        label: 'Vertical Velocity',
+                        yAxisID: 'Alt',
+                        fill: false,
+                        pointRadius: 0,
+                        backgroundColor: 'rgba(255, 0, 0, 1)',
+                        borderColor: 'rgba(255, 0, 0, 1)',
+                        data: velocityPlot,
+
+                    },
+                    
+                ]
+            },
+            options: {
+                title: {
+                    display: true,
+                    text: 'Flight Data',
+                    fontSize: 18,
+                },
+                responsive: true,
+                pan: {
+                    enabled: true,
+                    mode: 'xy',
+                },
+                zoom: {
+                    enabled: true,
+                    drag: false,
+                    mode: 'xy',
+                },
+                tooltips: {
+                    mode: 'label',
+                    callbacks: {
+                        label: function (tooltipItem, data) {
+                            return Math.round(tooltipItem.yLabel);
+                        },
+                        title: function (tooltipItem, data) {
+                            return "Time: " + 0.01*Math.round(tooltipItem[0].xLabel*100) + "s";
+                        },
+                    }
+                },
+                scales: {
+                    xAxes: [{
+                        ticks: {
+                            maxTicksLimit: 11,
+                            //precision: 0,
+                            //stepsize: 5
+                            // Include a dollar sign in the ticks
+                            callback: function (value, index, values) {
+                                return Math.round(value);
+                            }
+                        },
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Flight Time (s)'
+                        }
+                    }],
+                    yAxes: [{
+                        id: 'Alt',
+                        labelString: 'Altitude (ft)',
+                        type: 'linear',
+                        position: 'left',
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Alt (ft) / Vert. Vel. (ft/s)'
+                        }
+                    }]
+                }
+            },
+            plugins: {
+                
+            }, 
+            
+
+        });
+
+       
+      
 
     //console.log("Read");
     //console.log(lines);
 
     this.downloading = false;
-    this.cdRef.detectChanges();
+        this.cdRef.detectChanges();
+
+        var url = "https://flightsketch.com/weather/";
+        var headers = {  };
+        var params = {lat: this.localLat.toFixed(7), lon: this.localLon.toFixed(7)};
+
+        this.http.get(url, params, headers).then((data) => {
+            console.log(data);
+            this.avgWind = JSON.parse(data.data).avg_wind;
+            this.windDir = JSON.parse(data.data).wind_dir;
+            this.windGust = JSON.parse(data.data).wind_gust;
+            this.temp = JSON.parse(data.data).temp;
+            this.humidity = JSON.parse(data.data).humidity;
+            this.cloudCover = JSON.parse(data.data).cloud_cover;
+        }, (err) => {
+                console.log(err);
+        });
 
     // writes lines to disk
 
@@ -783,83 +941,113 @@ export class DevicePage implements OnInit {
         var count = 0;
         var data = "";
         let numLines = this.dataFileElements.length / 4;
+        let fileName: string = "";
+        let storagePath = "";
+        fileName = this.fileNameInput + ".csv";
 
-        
+        if (this.plt.is("ios")) {
+            storagePath = this.file.syncedDataDirectory;
+        } else if (this.plt.is("android")) {
+            storagePath = this.file.externalApplicationStorageDirectory;
+        }
+
+        await this.uploadLoader;
+
+        this.uploadLoader = this.loadingController.create({
+            message: 'Uploading Data...'
+        }).then((res) => {
+            res.present();
+
+            res.onDidDismiss().then((dis) => {
+                console.log('Loading dismissed!');
+            });
+        });
 
         await this.storage.get('FStoken').then((val) => {
             console.log('Token Found: ', val);
             this.token = "Token " + val;
-            console.log(this.token);
-
-            var url = "https://flightsketch.com/api/verify-token/";
-            var headers = { Authorization: "falseToken" };//this.token };
-            var params = {};
-            this.http.get(url, params, headers).then((data) => {
-                console.log(JSON.parse(data.data).name);
-                if (JSON.parse(data.data).name == "") {
-                    console.log("no name");
-                    this.loggedIn = false;
-                } else {
-                    this.loggedIn = true;
-                    this.userName = JSON.parse(data.data).name;
-
-                }
-            }, (err) => {
-
-            });
+            console.log(this.token); 
         });
 
+        var url = "https://flightsketch.com/api/verify-token/";
+        var headers = { Authorization: this.token };
+        var params = {};
 
-        for (var line = 0; line < numLines; line++) {
-            data = data + this.lines[line];
-            for (var i = 0, strLen = this.lines[line].length; i < strLen; i++) {
-                bufView[count] = this.lines[line].charCodeAt(i);
-                count++;
+        await this.http.get(url, params, headers).then((data) => {
+            console.log(JSON.parse(data.data).name);
+            if (JSON.parse(data.data).name == "") {
+                console.log("no name");
+                this.loggedIn = false;
+            } else {
+                this.loggedIn = true;
+                this.userName = JSON.parse(data.data).name;
+
             }
-        }
+        }, (err) => {
 
+        });
 
+        if (this.loggedIn) {
 
-        let date = new Date();
-        let fileName: string = "";
-        let latest_date = this.datepipe.transform(date, 'yyyy-MM-dd__HH-mm-ss');
-        console.log(latest_date);
-        fileName = "fltSk_" + latest_date;
-
-        this.file.writeFile(this.file.externalApplicationStorageDirectory, fileName, data, { replace: true })
-            .then(() => {
-                console.log('success');
-                let filePathVar = this.file.externalApplicationStorageDirectory + '/' + fileName;
-                const fileTransfer: FileTransferObject = this.transfer.create();
-
-                let options1: FileUploadOptions = {
-                    fileKey: 'logFile',
-                    fileName: fileName,
-                    chunkedMode: false,
-                    mimeType: "application/csv",
-                    params: {
-                        title: "Upload from Android", apogee: this.device["maxAlt"].toFixed(1), max_vertical_velocity: this.device["maxVelocity"].toFixed(1),
-                        avg_descent_rate: this.device["avgDescent"].toFixed(1), time_to_burnout: this.device["timeToBurnout"].toFixed(2),
-                        time_to_apogee: this.device["timeToApogee"].toFixed(2), time_to_landing: this.device["totalTime"].toFixed(2)
-                    },
-                    headers: { Authorization: this.token }
-
+            for (var line = 0; line < numLines; line++) {
+                data = data + this.lines[line];
+                for (var i = 0, strLen = this.lines[line].length; i < strLen; i++) {
+                    bufView[count] = this.lines[line].charCodeAt(i);
+                    count++;
                 }
-                // Works
-                fileTransfer.upload(filePathVar, 'https://flightsketch.com/api/rocketflights/', options1)
-                    .then((data) => {
-                        // success
-                        alert("File Upload Complete");
-                        this.file.removeFile(this.file.externalApplicationStorageDirectory, fileName);
-                    }, (err) => {
-                        // error
-                        alert("Upload error:   " + JSON.stringify(err));
-                    });
+            }
 
-            })
-            .catch((err) => {
-                console.error(err);
-            });
+            this.file.writeFile(storagePath, fileName, data, { replace: true })
+                .then(() => {
+                    console.log('success');
+                    let filePathVar = storagePath + '/' + fileName;
+                    const fileTransfer: FileTransferObject = this.transfer.create();
+
+                    let options1: FileUploadOptions = {
+                        fileKey: 'logFile',
+                        fileName: fileName,
+                        chunkedMode: false,
+                        mimeType: "application/csv",
+                        params: {
+                            title: this.titleInput,
+                            description: this.descriptionInput,
+                            apogee: this.device["maxAlt"].toFixed(1),
+                            max_vertical_velocity: this.device["maxVelocity"].toFixed(1),
+                            avg_descent_rate: this.device["avgDescent"].toFixed(1),
+                            time_to_burnout: this.device["timeToBurnout"].toFixed(2),
+                            time_to_apogee: this.device["timeToApogee"].toFixed(2),
+                            time_to_landing: this.device["totalTime"].toFixed(2),
+                            avg_wind: this.avgWind.toFixed(1),
+                            wind_gust: this.windGust.toFixed(1),
+                            wind_dir: this.windDir.toFixed(0),
+                            temp: this.temp.toFixed(1),
+                            humidity: this.humidity.toFixed(0),
+                            cloud_cover: this.cloudCover.toFixed(0),
+
+                        },
+                        headers: { Authorization: this.token }
+
+                    }
+                    // Works
+                    fileTransfer.upload(filePathVar, 'https://flightsketch.com/api/rocketflights/', options1)
+                        .then((data) => {
+                            // success
+                            this.loadingController.dismiss();
+                            alert("File Upload Complete");
+                            this.file.removeFile(this.file.externalApplicationStorageDirectory, fileName);
+                        }, (err) => {
+                                // error
+                                this.loadingController.dismiss();
+                            alert("Upload error:   " + JSON.stringify(err));
+                        });
+
+                })
+                .catch((err) => {
+                    console.error(err);
+                });
+        } else {
+            alert("Please log in to upload data.");
+        }
     }
 
 
@@ -869,6 +1057,16 @@ export class DevicePage implements OnInit {
         var count = 0;
         var data = "";
         let numLines = this.dataFileElements.length / 4;
+        let fileName: string = "";
+        let storagePath = "";
+
+        if (this.plt.is("ios")) {
+            storagePath = this.file.documentsDirectory;
+        } else if (this.plt.is("android")) {
+            storagePath = this.file.externalApplicationStorageDirectory;
+        }
+        fileName = this.fileNameInput + ".csv";
+
         for (var line = 0; line < numLines; line++) {
             data = data + this.lines[line];
             for (var i = 0, strLen = this.lines[line].length; i < strLen; i++) {
@@ -876,13 +1074,10 @@ export class DevicePage implements OnInit {
                 count++;
             }
         }
-        let date = new Date();
-        let fileName: string = "";
-        let latest_date = this.datepipe.transform(date, 'yyyy-MM-dd__HH-mm-ss');
-        console.log(latest_date);
-        fileName = "fltSk_" + latest_date;
 
-        this.file.writeFile(this.file.externalApplicationStorageDirectory, fileName, data, { replace: true })
+        console.log(this.fileNameInput);
+
+        this.file.writeFile(storagePath, fileName, data, { replace: true })
             .then(() => {
                 console.log('success');
                 alert("File Save Complete");

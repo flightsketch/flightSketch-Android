@@ -11,11 +11,11 @@
                 <ion-input name="email" type="email" placeholder="your@email.com" [(ngModel)]="email" required></ion-input>
             </ion-item>
             <ion-item>
-                <ion-input name="password" type="password" placeholder="Password" [(ngModel)]="password" required></ion-input>
+                <ion-input (keyup.enter)="login(form)" name="password" type="password" placeholder="Password" [(ngModel)]="password" required></ion-input>
             </ion-item>
         </div>
         <div padding>
-            <ion-button  size="large" type="submit" expand="block">Login</ion-button>
+            <ion-button size="large" type="submit" expand="block">Login</ion-button>
         </div>
     </form>
 </ion-content>
