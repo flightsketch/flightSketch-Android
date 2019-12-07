@@ -42,7 +42,7 @@ export class HomePage implements OnInit  {
   }
 
   doRefresh(event) {
-
+    this.devices = [];
     this.ble.isEnabled().then( 
       () => { 
         this.scanning = true;

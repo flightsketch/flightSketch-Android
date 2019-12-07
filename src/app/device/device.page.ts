@@ -291,7 +291,7 @@ export class DevicePage implements OnInit {
           buttons: ['OK']
         }).then( alert => {
     
-          alert.present();
+          //alert.present();
     
         });
       });
@@ -439,7 +439,9 @@ export class DevicePage implements OnInit {
         this.device["dataAvailable"] = false;
       
       let recordingAndArmedView:DataView = new DataView(rawBuff, 4, 2);
-      let recording = recordingAndArmedView.getUint8(0);
+      let status = recordingAndArmedView.getUint8(0);
+        let recording = status & (1 << 1);
+        let armed = status & (1 << 0);
       if ( recording > 0 ) {
         console.log("Dev reporting recording");
         this.device["recording"] = true;
@@ -447,13 +449,15 @@ export class DevicePage implements OnInit {
         this.device["recording"] = false;
       }
 
-      let armed = recordingAndArmedView.getUint8(1);
       if ( armed > 0 ) {
         this.device["armed"] = true;
       } else {
         this.device["armed"] = false;
       }
 
+        console.log(status);
+
+      this.cdRef.detectChanges();
     } else if ( packetType == 7 ) {
 
       //console.log(rawBuff);
@@ -1032,9 +1036,11 @@ export class DevicePage implements OnInit {
                     fileTransfer.upload(filePathVar, 'https://flightsketch.com/api/rocketflights/', options1)
                         .then((data) => {
                             // success
+
+
+                            this.file.removeFile(this.file.externalApplicationStorageDirectory, fileName);
                             this.loadingController.dismiss();
                             alert("File Upload Complete");
-                            this.file.removeFile(this.file.externalApplicationStorageDirectory, fileName);
                         }, (err) => {
                                 // error
                                 this.loadingController.dismiss();
@@ -1046,6 +1052,7 @@ export class DevicePage implements OnInit {
                     console.error(err);
                 });
         } else {
+            this.loadingController.dismiss();
             alert("Please log in to upload data.");
         }
     }

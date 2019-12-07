@@ -6,10 +6,9 @@
     <ion-title>
       Altimeter
     </ion-title>
-    <ion-label *ngIf="connecting" slot="end">Connecting...</ion-label>
+    <ion-label *ngIf="device.connected" slot="end">Connected</ion-label>
   </ion-toolbar>
 </ion-header>
-
 <ion-content>
 
 
@@ -79,6 +78,12 @@
           <ion-list *ngIf="device.armed">
             <ion-list-header>      
             <ion-label color="dark"><h1>Ready To Launch</h1></ion-label>
+            </ion-list-header>   
+          </ion-list>
+
+          <ion-list *ngIf="device.recording">
+            <ion-list-header>      
+            <ion-label color="dark"><h1>Recording Data</h1></ion-label>
             </ion-list-header>   
           </ion-list>
 
@@ -169,7 +174,7 @@
 
     
 
-    <div *ngIf="true" style="height:100%;">
+    <div *ngIf="false" style="height:100%;">
 
         <ion-card class="device-card">    
           <ion-card-header>
