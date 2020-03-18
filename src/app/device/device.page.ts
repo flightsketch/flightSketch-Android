@@ -597,13 +597,20 @@ export class DevicePage implements OnInit {
 
       this.downloadComplete = true;
       this.lines = new Array<String>();
-    this.lines.push("time,pressure,altitude,velocity\n");
-      let numLines = this.dataFileElements.length / 4;
+    this.lines.push("time,pressure,altitude,velocity,acc_x,acc_y,acc_z,acc_tot\n");
+      let numLines = this.dataFileElements.length / 8;
 
     let time:Array<number> = new Array<number>();
     let pressure:Array<number> = new Array<number>();
     let altitude:Array<number> = new Array<number>();
-    let velocity:Array<number> = new Array<number>();
+    let velocity: Array<number> = new Array<number>();
+
+    let acc_x: Array<number> = new Array<number>();
+    let acc_y: Array<number> = new Array<number>();
+    let acc_z: Array<number> = new Array<number>();
+    let acc_total: Array<number> = new Array<number>();
+
+
     let accel:Array<number> = new Array<number>();
 
     let rawAlt:Array<number> = new Array<number>();
@@ -663,10 +670,16 @@ export class DevicePage implements OnInit {
 
     for ( let i=0; i < numLines; i++) {
 
-      time.push(this.dataFileElements[i*4]);
-      pressure.push(this.dataFileElements[i*4+1]);
-      altitude.push(this.dataFileElements[i*4+2]);
-      velocity.push(this.dataFileElements[i*4+3]);
+      time.push(this.dataFileElements[i*8]);
+      pressure.push(this.dataFileElements[i*8+1]);
+      altitude.push(this.dataFileElements[i*8+2]);
+      velocity.push(this.dataFileElements[i * 8 + 3]);
+
+      acc_x.push(this.dataFileElements[i * 8 + 4]);
+      acc_y.push(this.dataFileElements[i * 8 + 5]);
+      acc_z.push(this.dataFileElements[i * 8 + 6]);
+      acc_total.push(this.dataFileElements[i * 8 + 7]);
+
 
       rawAlt.push(pressure[i]/101.325);
       rawAlt[i] = Math.pow(rawAlt[i],0.190284);
@@ -795,6 +808,10 @@ export class DevicePage implements OnInit {
           line += "," + pressure[i].toFixed(4);
           line += "," + altitude[i].toFixed(3);
           line += "," + velocity[i].toFixed(3);
+          line += "," + acc_x[i].toFixed(3);
+          line += "," + acc_y[i].toFixed(3);
+          line += "," + acc_z[i].toFixed(3);
+          line += "," + acc_total[i].toFixed(3);
           line += "\n";
           this.lines.push(line);
       }
@@ -944,7 +961,7 @@ export class DevicePage implements OnInit {
         var bufView = new Uint16Array(buf);
         var count = 0;
         var data = "";
-        let numLines = this.dataFileElements.length / 4;
+        let numLines = this.dataFileElements.length / 8;
         let fileName: string = "";
         let storagePath = "";
         fileName = this.fileNameInput + ".csv";
@@ -1063,7 +1080,7 @@ export class DevicePage implements OnInit {
         var bufView = new Uint16Array(buf);
         var count = 0;
         var data = "";
-        let numLines = this.dataFileElements.length / 4;
+        let numLines = this.dataFileElements.length / 8;
         let fileName: string = "";
         let storagePath = "";
 
